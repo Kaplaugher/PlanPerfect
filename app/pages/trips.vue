@@ -9,7 +9,6 @@
         <p class="text-center text-red-500">
           Failed to load trips. Please try again.
         </p>
-        <!-- Optionally, add a retry button -->
       </div>
       <div v-else-if="trips.length === 0" class="text-center">
         <p class="text-lg text-gray-500 dark:text-gray-400">

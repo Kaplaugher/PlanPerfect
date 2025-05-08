@@ -5,14 +5,14 @@ import { trips } from '../database/schema'
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
 
-  if (!session?.user?.id) {
+  const userId = session.user?.id || session.id
+
+  if (!userId) {
     throw createError({
       statusCode: 401,
       statusMessage: 'Unauthorized: User session is required.'
     })
   }
-
-  const userId = session.user.id
 
   try {
     const userTrips = await useDrizzle().query.trips.findMany({
