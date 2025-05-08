@@ -13,6 +13,31 @@ const toast = useToast()
 const clipboard = useClipboard()
 const { model } = useLLM()
 
+const saving = ref(false)
+
+async function saveTrip() {
+  try {
+    saving.value = true
+    await $fetch(`/api/chats/${route.params.id}/save-trip`, {
+      method: 'POST'
+    })
+    toast.add({
+      description: 'Trip saved successfully',
+      icon: 'i-lucide-check-circle',
+      color: 'success'
+    })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save trip'
+    toast.add({
+      description: errorMessage,
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
 const { data: chat } = await useFetch(`/api/chats/${route.params.id}`, {
   cache: 'force-cache'
 })
@@ -69,7 +94,18 @@ onMounted(() => {
 <template>
   <UDashboardPanel id="chat" class="relative" :ui="{ body: 'p-0 sm:p-0' }">
     <template #header>
-      <DashboardNavbar />
+      <div class="flex items-center justify-between">
+        <DashboardNavbar />
+        <UButton
+          :loading="saving"
+          color="primary"
+          variant="soft"
+          icon="i-lucide-save"
+          @click="saveTrip"
+        >
+          Save as Trip
+        </UButton>
+      </div>
     </template>
 
     <template #body>
