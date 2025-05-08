@@ -22,24 +22,12 @@ function onSubmit() {
 
 const quickChats = [
   {
-    label: 'Why use Nuxt UI Pro?',
-    icon: 'i-logos-nuxt-icon'
+    label: 'Plan a new trip',
+    icon: 'i-heroicons-paper-airplane'
   },
   {
-    label: 'Help me create a Vue composable',
-    icon: 'i-logos-vue'
-  },
-  {
-    label: 'Tell me more about UnJS',
-    icon: 'i-logos-unjs'
-  },
-  {
-    label: 'Why should I consider VueUse?',
-    icon: 'i-logos-vueuse'
-  },
-  {
-    label: 'Tailwind CSS best practices',
-    icon: 'i-logos-tailwindcss-icon'
+    label: 'Record a past trip',
+    icon: 'i-heroicons-book-open'
   }
 ]
 </script>

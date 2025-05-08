@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { sql, relations } from 'drizzle-orm'
-import { sqliteTable, text, integer, index, unique } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index, unique, real } from 'drizzle-orm/sqlite-core'
 
 export const users = sqliteTable('users', {
   id: text().primaryKey().$defaultFn(() => randomUUID()),
@@ -16,7 +16,8 @@ export const users = sqliteTable('users', {
 ])
 
 export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats)
+  chats: many(chats),
+  trips: many(trips)
 }))
 
 export const chats = sqliteTable('chats', {
@@ -33,7 +34,11 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
     fields: [chats.userId],
     references: [users.id]
   }),
-  messages: many(messages)
+  messages: many(messages),
+  trip: one(trips, {
+    fields: [chats.id],
+    references: [trips.chatId]
+  }) // A chat can be associated with one trip
 }))
 
 export const messages = sqliteTable('messages', {
@@ -50,5 +55,58 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   chat: one(chats, {
     fields: [messages.chatId],
     references: [chats.id]
+  })
+}))
+
+export const trips = sqliteTable('trips', {
+  id: text().primaryKey().$defaultFn(() => randomUUID()),
+  userId: text().notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chatId: text().notNull().unique().references(() => chats.id, { onDelete: 'cascade' }), // Each trip is linked to a unique chat session
+  title: text().notNull(),
+  status: text({ enum: ['planned', 'recorded'] }).notNull(),
+  destination: text(),
+  startDate: integer({ mode: 'timestamp' }),
+  endDate: integer({ mode: 'timestamp' }),
+  summary: text(),
+  createdAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`).$onUpdate(() => sql`(unixepoch())`)
+}, t => [
+  index('tripUserIdIdx').on(t.userId),
+  index('tripChatIdIdx').on(t.chatId)
+])
+
+export const tripsRelations = relations(trips, ({ one, many }) => ({
+  user: one(users, {
+    fields: [trips.userId],
+    references: [users.id]
+  }),
+  chat: one(chats, {
+    fields: [trips.chatId],
+    references: [chats.id]
+  }),
+  activities: many(tripActivities)
+}))
+
+export const tripActivities = sqliteTable('trip_activities', {
+  id: text().primaryKey().$defaultFn(() => randomUUID()),
+  tripId: text().notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  name: text().notNull(),
+  description: text(),
+  date: integer({ mode: 'timestamp' }),
+  locationName: text(),
+  latitude: real(), // For map coordinates
+  longitude: real(), // For map coordinates
+  type: text({ enum: ['attraction', 'restaurant', 'activity', 'note', 'other'] }),
+  order: integer(),
+  createdAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`).$onUpdate(() => sql`(unixepoch())`)
+}, t => [
+  index('activityTripIdIdx').on(t.tripId)
+])
+
+export const tripActivitiesRelations = relations(tripActivities, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tripActivities.tripId],
+    references: [trips.id]
   })
 }))
