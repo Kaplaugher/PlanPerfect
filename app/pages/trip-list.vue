@@ -52,6 +52,7 @@
               block
               color="primary"
               variant="solid"
+              @click="console.log('Navigating to trip:', trip.id)"
             >
               View Details
             </UButton>
@@ -63,24 +64,23 @@
 </template>
 
 <script setup lang="ts">
+// Add page metadata to define the route correctly
+definePageMeta({
+  name: 'trip-list'
+})
+
 interface Trip {
   id: string
   title?: string | null
   status: 'planned' | 'recorded'
   destination?: string | null
-  startDate?: string | number | Date | null // Assuming date can be in various formats from API
+  startDate?: string | number | Date | null
   endDate?: string | number | Date | null
-  // Add other relevant fields that might come from the API and are useful for display
 }
 
 const { data: trips, pending, error, refresh: _refresh } = await useFetch<Trip[]>('/api/trips', {
   key: 'trips-list',
-  default: () => [] // Provide a default empty array to prevent issues if data is null initially
-})
-
-// Optional: Add a title for the page using useHead or definePageMeta
-definePageMeta({
-  title: 'My Trips'
+  default: () => []
 })
 </script>
 
