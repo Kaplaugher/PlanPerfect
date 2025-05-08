@@ -1,11 +1,34 @@
-import { streamText } from 'ai'
+import { streamText, tool } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
+import { z } from 'zod'
 
 defineRouteMeta({
   openAPI: {
     description: 'Chat with AI.',
     tags: ['ai']
   }
+})
+
+// Zod Schemas for structured trip data
+const tripActivitySchema = z.object({
+  name: z.string().describe('Name of the activity, restaurant, or attraction.'),
+  description: z.string().optional().describe('Brief description or notes about the activity.'),
+  date: z.string().optional().describe('Date of the activity (e.g., YYYY-MM-DD or a general descriptor like \'Day 1\').'),
+  locationName: z.string().optional().describe('Name of the location (e.g., \'Eiffel Tower\', \'Louvre Museum\').'),
+  latitude: z.number().optional().describe('Latitude of the location. Omit if not known.'),
+  longitude: z.number().optional().describe('Longitude of the location. Omit if not known.'),
+  type: z.enum(['attraction', 'restaurant', 'activity', 'note', 'other']).optional().describe('Type of activity.'),
+  order: z.number().optional().describe('Order of the activity for the day/trip.')
+})
+
+const tripDetailsSchema = z.object({
+  title: z.string().describe('A concise and descriptive title for the trip (e.g., \'Paris Adventure Spring 2024\', \'Kyoto Culinary Journey\').'),
+  status: z.enum(['planned', 'recorded']).describe('Status of the trip: \'planned\' for future trips, \'recorded\' for past trips.'),
+  destination: z.string().optional().describe('Main destination of the trip (e.g., \'Paris, France\', \'Tokyo, Japan\').'),
+  startDate: z.string().optional().describe('Start date of the trip (e.g., YYYY-MM-DD). Omit if not specified.'),
+  endDate: z.string().optional().describe('End date of the trip (e.g., YYYY-MM-DD). Omit if not specified.'),
+  summary: z.string().optional().describe('A brief overall summary of the trip plan or journal.'),
+  activities: z.array(tripActivitySchema).optional().describe('List of activities, attractions, or waypoints for the trip. Omit if no specific activities are detailed yet.')
 })
 
 export default defineEventHandler(async (event) => {
@@ -72,24 +95,28 @@ export default defineEventHandler(async (event) => {
     maxTokens: 10000,
     system: `You are an AI assistant specialized in trip planning and journaling.
 
+If the user's initial message is 'Plan a new trip' or 'Record a past trip', understand that this is just the starting point. You MUST engage in a conversation to gather more details.
+
 If the user wants to PLAN a new trip:
 - Ask for the destination, length of the trip in days, and their main interests (e.g., restaurants, museums, outdoor activities, specific types of food).
 - Based on this, provide a suggested itinerary with specific place recommendations.
-- You should aim to eventually provide a structured summary including: destination, duration, overall summary, and a list of waypoints with names and ideally, general locations.
 
 If the user wants to RECORD a past trip:
 - Ask for the destination, approximate dates or duration of the trip.
 - Encourage them to share highlights, places they visited, activities they did, and any memorable experiences or restaurants.
-- You should aim to eventually provide a structured summary including: destination, dates/duration, overall summary, and a list of recorded activities/places with names and general locations.
 
-For both planning and recording, be conversational and helpful. Clarify details as needed.`,
+For both planning and recording, be conversational and helpful. Clarify details as needed.
+Once you have gathered comprehensive details for a trip plan or journal, provide a summary.`,
     messages,
     async onFinish(response) {
-      await db.insert(tables.messages).values({
-        chatId: chat.id,
-        role: 'assistant',
-        content: response.text
-      })
+      // Save the assistant's final text response (if any)
+      if (response.text) {
+        await db.insert(tables.messages).values({
+          chatId: chat.id,
+          role: 'assistant',
+          content: response.text // This might be a confirmation like "Okay, I've processed the trip details!"
+        })
+      }
     }
   }).toDataStreamResponse()
 })

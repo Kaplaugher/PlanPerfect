@@ -74,6 +74,7 @@ onMounted(() => {
 
     <template #body>
       <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
+        <pre class="text-xs">{{ JSON.stringify(messages, null, 2) }}</pre>
         <UChatMessages
           :messages="messages"
           :status="status"
