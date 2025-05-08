@@ -43,17 +43,47 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Verify user exists in the database
+  const userId = session.user?.id || session.id
+  const user = await db.query.users.findFirst({
+    where: (user, { eq }) => eq(user.id, userId)
+  })
+
+  if (!user) {
+    throw createError({
+      statusCode: 400,
+      message: 'User not found in database'
+    })
+  }
+
   try {
-    // Create a new trip
-    await db.insert(tables.trips).values({
+    // Log the values being inserted for debugging
+    console.log('Inserting trip with values:', {
       id: randomUUID(),
-      userId: session.user?.id || session.id,
+      userId: user.id,
+      chatId: chat.id,
+      title: chat.title || 'New Trip',
+      status: 'planned'
+    })
+
+    // Create a new trip
+    const tripId = randomUUID()
+    await db.insert(tables.trips).values({
+      id: tripId,
+      userId: user.id, // Use the verified user ID
       chatId: chat.id,
       title: chat.title || 'New Trip',
       status: 'planned',
       createdAt: new Date(),
       updatedAt: new Date()
-    }).returning()
+    })
+
+    // Fetch and return the created trip
+    const createdTrip = await db.query.trips.findFirst({
+      where: (trip, { eq }) => eq(trip.id, tripId)
+    })
+
+    return createdTrip
   } catch (error: unknown) {
     console.error('Error creating trip:', error)
     throw createError({
