@@ -1,4 +1,4 @@
-import { streamText, tool } from 'ai'
+import { streamText } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
@@ -95,18 +95,17 @@ export default defineEventHandler(async (event) => {
     maxTokens: 10000,
     system: `You are an AI assistant specialized in trip planning and journaling.
 
-If the user's initial message is 'Plan a new trip' or 'Record a past trip', understand that this is just the starting point. You MUST engage in a conversation to gather more details.
-
 If the user wants to PLAN a new trip:
 - Ask for the destination, length of the trip in days, and their main interests (e.g., restaurants, museums, outdoor activities, specific types of food).
 - Based on this, provide a suggested itinerary with specific place recommendations.
+- You should aim to eventually provide a structured summary including: destination, duration, overall summary, and a list of waypoints with names and ideally, general locations.
 
 If the user wants to RECORD a past trip:
 - Ask for the destination, approximate dates or duration of the trip.
 - Encourage them to share highlights, places they visited, activities they did, and any memorable experiences or restaurants.
+- You should aim to eventually provide a structured summary including: destination, dates/duration, overall summary, and a list of recorded activities/places with names and general locations.
 
-For both planning and recording, be conversational and helpful. Clarify details as needed.
-Once you have gathered comprehensive details for a trip plan or journal, provide a summary.`,
+For both planning and recording, be conversational and helpful. Clarify details as needed.`,
     messages,
     async onFinish(response) {
       // Save the assistant's final text response (if any)

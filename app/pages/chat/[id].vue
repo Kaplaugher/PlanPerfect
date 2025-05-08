@@ -74,12 +74,11 @@ onMounted(() => {
 
     <template #body>
       <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
-        <pre class="text-xs">{{ JSON.stringify(messages, null, 2) }}</pre>
         <UChatMessages
           :messages="messages"
           :status="status"
           :assistant="{ actions: [{ label: 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] }"
-          class="lg:pt-(--ui-header-height) pb-4 sm:pb-6"
+          class="lg:pt-[--ui-header-height] pb-4 sm:pb-6"
           :spacing-offset="160"
         >
           <template #content="{ message }">

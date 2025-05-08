@@ -114,6 +114,13 @@ defineShortcuts({
             to="/"
             @click="open = false"
           />
+          <UButton
+            v-bind="collapsed ? { icon: 'i-lucide-plane' } : { label: 'Trips' }"
+            variant="soft"
+            block
+            to="/trips"
+            @click="open = false"
+          />
 
           <template v-if="collapsed">
             <UDashboardSearchButton collapsed />
