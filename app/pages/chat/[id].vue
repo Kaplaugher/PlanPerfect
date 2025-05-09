@@ -9,26 +9,44 @@ const components = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 const clipboard = useClipboard()
 const { model } = useLLM()
 
 const saving = ref(false)
+const savingStep = ref('')
 
 async function saveTrip() {
   try {
     saving.value = true
-    await $fetch(`/api/chats/${route.params.id}/save-trip`, {
+    savingStep.value = 'Analyzing conversation with AI...'
+
+    const response = await $fetch(`/api/chats/${route.params.id}/save-trip`, {
       method: 'POST'
     })
+
+    savingStep.value = ''
     toast.add({
-      description: 'Trip saved successfully',
+      title: 'Trip saved successfully',
+      description: `${response.title} has been created with ${response.activities?.length || 0} activities`,
       icon: 'i-lucide-check-circle',
-      color: 'success'
+      color: 'success',
+      actions: [
+        {
+          label: 'View Trip',
+          click: () => router.push(`/trips/${response.id}`)
+        }
+      ]
     })
+
+    // Refresh data to reflect changes
+    refreshNuxtData('trips')
   } catch (error: unknown) {
+    savingStep.value = ''
     const errorMessage = error instanceof Error ? error.message : 'Failed to save trip'
     toast.add({
+      title: 'Error saving trip',
       description: errorMessage,
       icon: 'i-lucide-alert-circle',
       color: 'error'
@@ -96,15 +114,20 @@ onMounted(() => {
     <template #header>
       <div class="flex items-center justify-between">
         <DashboardNavbar />
-        <UButton
-          :loading="saving"
-          color="primary"
-          variant="soft"
-          icon="i-lucide-save"
-          @click="saveTrip"
-        >
-          Save as Trip
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UText v-if="savingStep" size="sm" class="text-gray-500 dark:text-gray-400 mr-2">
+            {{ savingStep }}
+          </UText>
+          <UButton
+            :loading="saving"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-save"
+            @click="saveTrip"
+          >
+            Save as Trip
+          </UButton>
+        </div>
       </div>
     </template>
 

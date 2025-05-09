@@ -118,7 +118,7 @@ defineShortcuts({
             v-bind="collapsed ? { icon: 'i-lucide-plane' } : { label: 'Trips' }"
             variant="soft"
             block
-            to="/trip-list"
+            to="/trips"
             @click="open = false"
           />
 
