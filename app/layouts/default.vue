@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { LazyModalConfirm } from '#components'
 
 const route = useRoute()
@@ -36,7 +36,6 @@ onNuxtReady(async () => {
 
 watch(loggedIn, () => {
   refreshChats()
-
   open.value = false
 })
 
@@ -45,16 +44,16 @@ const { groups } = useChats(chats)
 const items = computed(() => groups.value?.flatMap((group) => {
   return [{
     label: group.label,
-    type: 'label' as const
+    type: 'label'
   }, ...group.items.map(item => ({
     ...item,
-    slot: 'chat' as const,
+    slot: 'chat',
     icon: undefined,
     class: item.label === 'Untitled' ? 'text-muted' : ''
   }))]
 }))
 
-async function deleteChat(id: string) {
+async function deleteChat(id) {
   const instance = deleteModal.open()
   const result = await instance.result
   if (!result) {
@@ -144,7 +143,7 @@ defineShortcuts({
                 size="xs"
                 class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
                 tabindex="-1"
-                @click.stop.prevent="deleteChat((item as any).id)"
+                @click.stop.prevent="deleteChat(item.id)"
               />
             </div>
           </template>

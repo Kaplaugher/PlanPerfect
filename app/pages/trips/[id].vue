@@ -29,15 +29,37 @@
 
       <div v-else-if="tripData" class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Left column: Carousel -->
-        <div class="md:col-span-1">
-          <UCarousel v-slot="{ item }" :items="items" class="w-full max-w-md mx-auto sticky top-20">
-            <img
-              :src="item"
-              width="640"
-              height="640"
-              class="rounded-lg aspect-square object-cover"
+        <div class="md:col-span-1 flex flex-col gap-4">
+          <div class="sticky top-20 z-20">
+            <UModal
+              title="Add Photos"
+              description="Upload photos to your trip gallery"
             >
-          </UCarousel>
+              <UButton
+                color="white"
+                variant="solid"
+                icon="i-lucide-camera"
+                class="shadow-md hover:shadow-lg transition-shadow"
+              />
+
+              <template #body>
+                <UInput
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  @change="onFileSelect"
+                />
+              </template>
+            </UModal>
+            <UCarousel v-slot="{ item }" :items="items" class="w-full max-w-md mx-auto">
+              <img
+                :src="item"
+                width="640"
+                height="640"
+                class="rounded-lg aspect-square object-cover"
+              >
+            </UCarousel>
+          </div>
         </div>
 
         <!-- Right column: Trip Details -->
@@ -178,7 +200,7 @@
   </UDashboardPanel>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { format, parseISO } from 'date-fns'
 
 definePageMeta({
@@ -190,6 +212,7 @@ definePageMeta({
 
 const route = useRoute()
 const toast = useToast()
+const upload = useUpload(`/api/trips/blob/${route.params.id}`, { method: 'PUT' })
 
 const tripPending = ref(true)
 const tripData = ref(null)
@@ -203,6 +226,11 @@ const items = [
   'https://picsum.photos/640/640?random=5',
   'https://picsum.photos/640/640?random=6'
 ]
+
+async function onFileSelect(event) {
+  const uploadedFiles = await upload(event.target)
+  console.log('Uploaded files:', uploadedFiles)
+}
 
 function formatDate(dateString) {
   if (!dateString) return 'Date not specified'

@@ -39,7 +39,8 @@ export default defineNuxtConfig({
 
   hub: {
     ai: true,
-    database: true
+    database: true,
+    blob: true
   },
 
   eslint: {
@@ -48,6 +49,17 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
+    }
+  },
+
+  app: {
+    head: {
+      link: [
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+        }
+      ]
     }
   }
 })
