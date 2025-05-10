@@ -35,12 +35,25 @@
               title="Add Photos"
               description="Upload photos to your trip gallery"
             >
-              <UButton
-                color="white"
-                variant="solid"
-                icon="i-lucide-camera"
-                class="shadow-md hover:shadow-lg transition-shadow"
-              />
+              <div class="flex gap-2">
+                <UButton
+                  v-if="tripImages?.length"
+                  color="red"
+                  variant="soft"
+                  icon="i-lucide-trash-2"
+                  :loading="isDeleting"
+                  :disabled="isDeleting"
+                  @click.stop="deleteAllImages"
+                >
+                  {{ isDeleting ? 'Deleting...' : 'Delete All' }}
+                </UButton>
+                <UButton
+                  color="white"
+                  variant="solid"
+                  icon="i-lucide-camera"
+                  class="shadow-md hover:shadow-lg transition-shadow"
+                />
+              </div>
 
               <template #body>
                 <UInput
@@ -209,6 +222,7 @@
 
 <script lang="ts" setup>
 import { format, parseISO } from 'date-fns'
+import { LazyModalConfirm } from '#components'
 
 definePageMeta({
   name: 'trip-details',
@@ -220,14 +234,20 @@ definePageMeta({
 const route = useRoute()
 const toast = useToast()
 const upload = useUpload(`/api/trips/blob/${route.params.id}`, { method: 'PUT' })
+const overlay = useOverlay()
+
+const deleteModal = overlay.create(LazyModalConfirm, {
+  props: {
+    title: 'Delete All Images',
+    description: 'Are you sure you want to delete all images for this trip? This action cannot be undone.',
+    confirmText: 'Delete All',
+    cancelText: 'Cancel',
+    color: 'red'
+  }
+})
 
 // Fetch trip images
 const { data: tripImages } = await useFetch(`/api/trips/blob/${route.params.id}`)
-
-// Log the blob objects to see their structure
-watch(tripImages, (images) => {
-  console.log('Trip images:', images)
-}, { immediate: true })
 
 const { data: tripData, pending: tripPending, error: tripError } = await useAsyncData(
   `trip-${route.params.id}`,
@@ -269,6 +289,9 @@ const items = computed(() => {
   // Use the serve endpoint with the blob pathname
   return tripImages.value.map(blob => `/api/blob/serve/${blob.pathname}`)
 })
+
+const isUploadModalOpen = ref(false)
+const isDeleting = ref(false)
 
 async function onFileSelect(event) {
   try {
@@ -367,6 +390,46 @@ function shareTrip() {
     description: 'Trip sharing will be available in a future update',
     icon: 'i-lucide-info'
   })
+}
+
+async function deleteAllImages(event) {
+  // Prevent the modal from opening
+  event?.preventDefault()
+  event?.stopPropagation()
+
+  try {
+    const confirmed = await deleteModal.open()
+    if (!confirmed) {
+      return
+    }
+
+    isDeleting.value = true
+    const response = await $fetch(`/api/trips/blob/${route.params.id}`, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      // Refresh the images list
+      await refreshNuxtData(`/api/trips/blob/${route.params.id}`)
+
+      toast.add({
+        title: 'Success',
+        description: 'All images deleted successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success'
+      })
+    }
+  } catch (error) {
+    console.error('Error deleting images:', error)
+    toast.add({
+      title: 'Error',
+      description: error.message || 'Failed to delete images',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  } finally {
+    isDeleting.value = false
+  }
 }
 </script>
 
