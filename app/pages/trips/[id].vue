@@ -51,7 +51,12 @@
                 />
               </template>
             </UModal>
-            <UCarousel v-slot="{ item }" :items="items" class="w-full max-w-md mx-auto">
+            <UCarousel
+              v-slot="{ item }"
+              arrows
+              :items="items"
+              class="w-full max-w-md mx-auto"
+            >
               <img
                 :src="item"
                 width="640"
@@ -101,7 +106,9 @@
                     />
 
                     <template #body>
-                      <Placeholder class="h-48" />
+                      <div class="h-48">
+                        hi
+                      </div>
                     </template>
                   </UDrawer>
                   <UButton
@@ -214,22 +221,78 @@ const route = useRoute()
 const toast = useToast()
 const upload = useUpload(`/api/trips/blob/${route.params.id}`, { method: 'PUT' })
 
-const tripPending = ref(true)
-const tripData = ref(null)
-const tripError = ref(null)
+// Fetch trip images
+const { data: tripImages } = await useFetch(`/api/trips/blob/${route.params.id}`)
 
-const items = [
-  'https://picsum.photos/640/640?random=1',
-  'https://picsum.photos/640/640?random=2',
-  'https://picsum.photos/640/640?random=3',
-  'https://picsum.photos/640/640?random=4',
-  'https://picsum.photos/640/640?random=5',
-  'https://picsum.photos/640/640?random=6'
-]
+// Log the blob objects to see their structure
+watch(tripImages, (images) => {
+  console.log('Trip images:', images)
+}, { immediate: true })
+
+const { data: tripData, pending: tripPending, error: tripError } = await useAsyncData(
+  `trip-${route.params.id}`,
+  async () => {
+    try {
+      const { data, error } = await useFetch(`/api/trips/${route.params.id}`)
+      if (error.value) {
+        throw new Error(error.value.message || 'Failed to load trip details')
+      }
+      return data.value
+    } catch (e) {
+      console.error('Error fetching trip:', e)
+      throw new Error(e.message || 'An unexpected error occurred')
+    }
+  }
+)
+
+// Watch for errors to show toast notifications
+watch(tripError, (error) => {
+  if (error) {
+    toast.add({
+      title: 'Error',
+      description: error.message,
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  }
+})
+
+// Use actual trip images or fallback to placeholder
+const items = computed(() => {
+  if (!tripImages.value?.length) {
+    return [
+      'https://picsum.photos/640/640?random=1',
+      'https://picsum.photos/640/640?random=2',
+      'https://picsum.photos/640/640?random=3'
+    ]
+  }
+  // Use the serve endpoint with the blob pathname
+  return tripImages.value.map(blob => `/api/blob/serve/${blob.pathname}`)
+})
 
 async function onFileSelect(event) {
-  const uploadedFiles = await upload(event.target)
-  console.log('Uploaded files:', uploadedFiles)
+  try {
+    const uploadedFiles = await upload(event.target)
+    console.log('Uploaded files:', uploadedFiles)
+
+    // Refresh the images list
+    await refreshNuxtData(`/api/trips/blob/${route.params.id}`)
+
+    toast.add({
+      title: 'Success',
+      description: 'Images uploaded successfully',
+      icon: 'i-lucide-check-circle',
+      color: 'success'
+    })
+  } catch (error) {
+    console.error('Error uploading files:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to upload images',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  }
 }
 
 function formatDate(dateString) {
@@ -305,35 +368,6 @@ function shareTrip() {
     icon: 'i-lucide-info'
   })
 }
-
-onMounted(async () => {
-  try {
-    const { data, error } = await useFetch(`/api/trips/${route.params.id}`)
-
-    if (error.value) {
-      tripError.value = error.value.message || 'Failed to load trip details'
-      toast.add({
-        title: 'Error',
-        description: tripError.value,
-        icon: 'i-lucide-alert-circle',
-        color: 'error'
-      })
-    } else {
-      tripData.value = data.value
-    }
-  } catch (e) {
-    console.error('Error fetching trip:', e)
-    tripError.value = e.message || 'An unexpected error occurred'
-    toast.add({
-      title: 'Error',
-      description: 'Failed to load trip details',
-      icon: 'i-lucide-alert-circle',
-      color: 'error'
-    })
-  } finally {
-    tripPending.value = false
-  }
-})
 </script>
 
 <style scoped>
