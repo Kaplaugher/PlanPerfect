@@ -246,8 +246,15 @@ const deleteModal = overlay.create(LazyModalConfirm, {
   }
 })
 
-// Fetch trip images
-const { data: tripImages } = await useFetch(`/api/trips/blob/${route.params.id}`)
+// Fetch trip images with a key for proper refreshing
+const { data: tripImages, refresh: refreshImages } = await useFetch(`/api/trips/blob/${route.params.id}`, {
+  key: `trip-images-${route.params.id}`
+})
+
+// Log the blob objects to see their structure
+watch(tripImages, (images) => {
+  console.log('Trip images:', images)
+}, { immediate: true })
 
 const { data: tripData, pending: tripPending, error: tripError } = await useAsyncData(
   `trip-${route.params.id}`,
@@ -290,7 +297,6 @@ const items = computed(() => {
   return tripImages.value.map(blob => `/api/blob/serve/${blob.pathname}`)
 })
 
-const isUploadModalOpen = ref(false)
 const isDeleting = ref(false)
 
 async function onFileSelect(event) {
@@ -299,7 +305,7 @@ async function onFileSelect(event) {
     console.log('Uploaded files:', uploadedFiles)
 
     // Refresh the images list
-    await refreshNuxtData(`/api/trips/blob/${route.params.id}`)
+    await refreshImages()
 
     toast.add({
       title: 'Success',
@@ -398,7 +404,9 @@ async function deleteAllImages(event) {
   event?.stopPropagation()
 
   try {
-    const confirmed = await deleteModal.open()
+    const modalInstance = deleteModal.open()
+    const confirmed = await modalInstance.result
+
     if (!confirmed) {
       return
     }
@@ -410,7 +418,7 @@ async function deleteAllImages(event) {
 
     if (response.success) {
       // Refresh the images list
-      await refreshNuxtData(`/api/trips/blob/${route.params.id}`)
+      await refreshImages()
 
       toast.add({
         title: 'Success',
