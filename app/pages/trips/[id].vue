@@ -5,30 +5,43 @@
     </template>
 
     <template #body>
-      <UContainer class="p-4 sm:p-6">
-        <div v-if="tripPending" class="flex items-center justify-center py-12">
-          <div class="text-center">
-            <UIcon name="i-lucide-map" class="text-4xl mb-4 text-primary" />
-            <p class="text-gray-500 dark:text-gray-400">
-              Loading trip details...
-            </p>
-          </div>
-        </div>
-
-        <div v-else-if="tripError" class="mx-auto max-w-md text-center py-12">
-          <UIcon name="i-lucide-alert-triangle" class="text-5xl mb-4 text-amber-500" />
-          <h3 class="text-xl font-medium mb-2">
-            Unable to load trip
-          </h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-6">
-            {{ tripError }}
+      <div v-if="tripPending" class="flex items-center justify-center py-12">
+        <div class="text-center">
+          <UIcon name="i-lucide-map" class="text-4xl mb-4 text-primary" />
+          <p class="text-gray-500 dark:text-gray-400">
+            Loading trip details...
           </p>
-          <UButton to="/trips" color="primary" icon="i-lucide-arrow-left">
-            Return to Trip List
-          </UButton>
+        </div>
+      </div>
+
+      <div v-else-if="tripError" class="mx-auto max-w-md text-center py-12">
+        <UIcon name="i-lucide-alert-triangle" class="text-5xl mb-4 text-amber-500" />
+        <h3 class="text-xl font-medium mb-2">
+          Unable to load trip
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          {{ tripError }}
+        </p>
+        <UButton to="/trips" color="primary" icon="i-lucide-arrow-left">
+          Return to Trip List
+        </UButton>
+      </div>
+
+      <div v-else-if="tripData" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left column: Carousel -->
+        <div class="md:col-span-1">
+          <UCarousel v-slot="{ item }" :items="items" class="w-full max-w-md mx-auto sticky top-20">
+            <img
+              :src="item"
+              width="640"
+              height="640"
+              class="rounded-lg aspect-square object-cover"
+            >
+          </UCarousel>
         </div>
 
-        <div v-else-if="tripData" class="space-y-8">
+        <!-- Right column: Trip Details -->
+        <div class="md:col-span-1 space-y-8">
           <!-- Trip header section -->
           <div class="relative">
             <div class="bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-950 dark:to-gray-900 rounded-xl p-6 sm:p-8">
@@ -51,20 +64,30 @@
                   </div>
                 </div>
                 <div class="flex flex-row sm:flex-col gap-2 items-start">
-                  <UButton
-                    color="gray"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-pencil"
-                    :to="`/chats/${tripData.chatId}`"
+                  <UDrawer
+                    direction="right"
+                    title="Drawer with description"
+                    description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
                   >
-                    Edit in Chat
-                  </UButton>
+                    <UButton
+                      label="Edit in Chat"
+                      color="gray"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-edit"
+                      class="cursor-pointer"
+                    />
+
+                    <template #body>
+                      <Placeholder class="h-48" />
+                    </template>
+                  </UDrawer>
                   <UButton
                     color="gray"
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-share"
+                    class="cursor-pointer"
                     @click="shareTrip"
                   >
                     Share
@@ -150,7 +173,7 @@
             </UButton>
           </div>
         </div>
-      </UContainer>
+      </div>
     </template>
   </UDashboardPanel>
 </template>
@@ -171,6 +194,15 @@ const toast = useToast()
 const tripPending = ref(true)
 const tripData = ref(null)
 const tripError = ref(null)
+
+const items = [
+  'https://picsum.photos/640/640?random=1',
+  'https://picsum.photos/640/640?random=2',
+  'https://picsum.photos/640/640?random=3',
+  'https://picsum.photos/640/640?random=4',
+  'https://picsum.photos/640/640?random=5',
+  'https://picsum.photos/640/640?random=6'
+]
 
 function formatDate(dateString) {
   if (!dateString) return 'Date not specified'
