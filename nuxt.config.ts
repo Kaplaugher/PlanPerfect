@@ -12,6 +12,17 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: {
+      link: [
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+        }
+      ]
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   mdc: {
@@ -49,17 +60,6 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
-    }
-  },
-
-  app: {
-    head: {
-      link: [
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-        }
-      ]
     }
   }
 })
