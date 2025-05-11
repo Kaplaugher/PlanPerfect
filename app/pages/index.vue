@@ -52,10 +52,6 @@ const quickChats = [
           @submit="onSubmit"
         >
           <UChatPromptSubmit color="neutral" />
-
-          <template #footer>
-            <ModelSelect v-model="model" />
-          </template>
         </UChatPrompt>
 
         <div class="flex flex-wrap gap-2">

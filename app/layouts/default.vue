@@ -6,6 +6,39 @@ const toast = useToast()
 const overlay = useOverlay()
 const { loggedIn, openInPopup } = useUserSession()
 
+const links = [[{
+  label: 'Home',
+  icon: 'i-lucide-house',
+  to: '/'
+}, {
+  label: 'Trips',
+  icon: 'i-lucide-plane',
+  to: '/trips'
+}, {
+  label: 'Settings',
+  to: '/dashboard/settings',
+  icon: 'i-lucide-settings',
+  defaultOpen: true,
+  children: [{
+    label: 'General',
+    to: '/dashboard/settings',
+    exact: true
+  }, {
+    label: 'Security',
+    to: '/dashboard/settings/security'
+  }]
+}], [{
+  label: 'Feedback',
+  icon: 'i-lucide-message-circle',
+  to: 'https://github.com/nuxt-ui-pro/dashboard',
+  target: '_blank'
+}, {
+  label: 'Help & Support',
+  icon: 'i-lucide-info',
+  to: 'https://github.com/nuxt/ui-pro',
+  target: '_blank'
+}]]
+
 const open = ref(false)
 
 const deleteModal = overlay.create(LazyModalConfirm, {
@@ -106,19 +139,11 @@ defineShortcuts({
 
       <template #default="{ collapsed }">
         <div class="flex flex-col gap-1.5">
-          <UButton
-            v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: 'New chat' }"
-            variant="soft"
-            block
-            to="/"
-            @click="open = false"
-          />
-          <UButton
-            v-bind="collapsed ? { icon: 'i-lucide-plane' } : { label: 'Trips' }"
-            variant="soft"
-            block
-            to="/trips"
-            @click="open = false"
+          <UNavigationMenu
+            :items="links"
+            :collapsed="collapsed"
+            orientation="vertical"
+            :ui="{ link: 'overflow-hidden' }"
           />
 
           <template v-if="collapsed">

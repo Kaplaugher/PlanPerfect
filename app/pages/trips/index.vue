@@ -36,7 +36,7 @@
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             Start a conversation with the AI to plan your next trip, then save it here.
           </p>
-          <UButton to="/chat" color="primary" icon="i-lucide-plus-circle">
+          <UButton to="/" color="primary" icon="i-lucide-plus-circle">
             Start Planning
           </UButton>
         </div>
