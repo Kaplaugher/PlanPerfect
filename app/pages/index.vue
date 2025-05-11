@@ -2,8 +2,6 @@
 const input = ref('')
 const loading = ref(false)
 
-const { model } = useLLM()
-
 async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true

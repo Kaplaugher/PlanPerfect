@@ -1,5 +1,5 @@
-import { streamText } from 'ai'
-import { createWorkersAI } from 'workers-ai-provider'
+import { streamText, generateText } from 'ai'
+import { google } from '@ai-sdk/google' // Assuming this is the correct import
 
 defineRouteMeta({
   openAPI: {
@@ -13,17 +13,13 @@ export default defineEventHandler(async (event) => {
 
   const { id } = getRouterParams(event)
   // TODO: Use readValidatedBody
-  const { model, messages } = await readBody(event)
+  const { messages } = await readBody(event) // We might want to remove 'model' from body if it's always Gemini Flash
 
   const db = useDrizzle()
-  // Enable AI Gateway if defined in environment variables
-  const gateway = process.env.CLOUDFLARE_AI_GATEWAY_ID
-    ? {
-        id: process.env.CLOUDFLARE_AI_GATEWAY_ID,
-        cacheTtl: 60 * 60 * 24 // 24 hours
-      }
-    : undefined
-  const workersAI = createWorkersAI({ binding: hubAI(), gateway })
+
+  // Define the Gemini Flash model instance
+  // Ensure GOOGLE_API_KEY is set in your environment variables
+  const geminiModel = google('models/gemini-1.5-flash-latest')
 
   const chat = await db.query.chats.findFirst({
     where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.user?.id || session.id)),
@@ -36,23 +32,15 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!chat.title) {
-    // @ts-expect-error - response is not typed
-    const { response: title } = await hubAI().run('@cf/meta/llama-3.1-8b-instruct-fast', {
-      stream: false,
-      messages: [{
-        role: 'system',
-        content: `You are a title generator for a chat:
+    const { text: title } = await generateText({
+      model: geminiModel,
+      system: `You are a title generator for a chat:
         - Generate a short title based on the first user's message
         - The title should be less than 30 characters long
         - The title should be a summary of the user's message
         - Do not use quotes (' or ") or colons (:) or any other punctuation
-        - Do not use markdown, just plain text`
-      }, {
-        role: 'user',
-        content: chat.messages[0]!.content
-      }]
-    }, {
-      gateway
+        - Do not use markdown, just plain text`,
+      prompt: chat.messages[0]!.content
     })
     setHeader(event, 'X-Chat-Title', title.replace(/:/g, '').split('\n')[0])
     await db.update(tables.chats).set({ title }).where(eq(tables.chats.id, id as string))
@@ -60,16 +48,28 @@ export default defineEventHandler(async (event) => {
 
   const lastMessage = messages[messages.length - 1]
   if (lastMessage.role === 'user' && messages.length > 1) {
-    await db.insert(tables.messages).values({
-      chatId: id as string,
-      role: 'user',
-      content: lastMessage.content
+    // Ensure we only insert the actual last user message if it's new
+    // This logic might need adjustment based on how messages are passed from the client
+    const existingLastUserMessage = await db.query.messages.findFirst({
+      where: (msg, { eq, and }) => and(
+        eq(msg.chatId, id as string),
+        eq(msg.role, 'user'),
+        eq(msg.content, lastMessage.content)
+      ),
+      orderBy: (msg, { desc }) => desc(msg.createdAt)
     })
+
+    if (!existingLastUserMessage) {
+      await db.insert(tables.messages).values({
+        chatId: id as string,
+        role: 'user',
+        content: lastMessage.content
+      })
+    }
   }
 
   return streamText({
-    model: workersAI(model),
-    maxTokens: 10000,
+    model: geminiModel, // Use the configured Gemini model
     system: `You are an AI assistant specialized in trip planning and journaling.
 
 If the user wants to PLAN a new trip:
@@ -90,7 +90,7 @@ For both planning and recording, be conversational and helpful. Clarify details 
         await db.insert(tables.messages).values({
           chatId: chat.id,
           role: 'assistant',
-          content: response.text // This might be a confirmation like "Okay, I've processed the trip details!"
+          content: response.text
         })
       }
     }

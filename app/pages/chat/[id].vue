@@ -12,7 +12,6 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const clipboard = useClipboard()
-const { model } = useLLM()
 
 const saving = ref(false)
 const savingStep = ref('')
@@ -71,9 +70,7 @@ const { messages, input, handleSubmit, reload, stop, status, error } = useChat({
     content: message.content,
     role: message.role
   })),
-  body: {
-    model: model.value
-  },
+
   onResponse(response) {
     if (response.headers.get('X-Chat-Title')) {
       refreshNuxtData('chats')
@@ -164,10 +161,6 @@ onMounted(() => {
             @stop="stop"
             @reload="reload"
           />
-
-          <template #footer>
-            <ModelSelect v-model="model" />
-          </template>
         </UChatPrompt>
       </UContainer>
     </template>
