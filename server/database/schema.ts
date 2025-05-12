@@ -62,11 +62,11 @@ export const trips = sqliteTable('trips', {
   id: text().primaryKey().$defaultFn(() => randomUUID()),
   userId: text().notNull().references(() => users.id, { onDelete: 'cascade' }),
   chatId: text().notNull().unique().references(() => chats.id, { onDelete: 'cascade' }), // Each trip is linked to a unique chat session
-  title: text().notNull(),
-  status: text({ enum: ['planned', 'recorded'] }).notNull(),
+  title: text(), // Allow null title
+  status: text({ enum: ['planned', 'recorded', 'completed', 'booked', 'cancelled'] }).notNull().default('planned'), // Expand enum, keep notNull, provide default
   destination: text(),
-  startDate: integer({ mode: 'timestamp' }),
-  endDate: integer({ mode: 'timestamp' }),
+  startDate: integer({ mode: 'timestamp' }), // Already nullable
+  endDate: integer({ mode: 'timestamp' }), // Already nullable
   summary: text(),
   createdAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer({ mode: 'timestamp' }).notNull().default(sql`(unixepoch())`).$onUpdate(() => sql`(unixepoch())`)

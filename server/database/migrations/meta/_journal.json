@@ -15,6 +15,13 @@
       "when": 1746714755010,
       "tag": "0001_fixed_payback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1747059790999,
+      "tag": "0002_awesome_pestilence",
+      "breakpoints": true
     }
   ]
 }
