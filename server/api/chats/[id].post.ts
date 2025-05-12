@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   // Define the Gemini Flash model instance
   // Ensure GOOGLE_API_KEY is set in your environment variables
-  const geminiModel = google('models/gemini-1.5-flash-latest')
+  const geminiModel = google('models/gemini-2.0-flash-lite')
 
   const chat = await db.query.chats.findFirst({
     where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.user?.id || session.id)),
